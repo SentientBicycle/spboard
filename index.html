@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+      #messages { margin-bottom: 40px }
+      body {
+  /* Full screen width and height */
+  width: 100%;
+  min-height: 100vh;
+
+  /* Centers the container in the middle of the screen */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin: 0;
+  background-color: rgb(220, 220, 220);
+}
+
+
+
+#inner {
+  width: 5em;
+  height: 5em;
+  background-color: white;
+  box-shadow: 2px 2px 50px rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+}
+
+.hidden {
+  display: none;
+}
+
+#inner {
+  transition: transform 0.5s;
+}
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <img class="img img-responsive" typeof="foaf:Image" src="https://stmed.net/sites/default/files/ouija-board-wallpapers-28784-247391.jpg" width="" height=""  />
+        <div>
+          <div id="inner"></div>
+        </div>
+      </img>
+    </div>
+    <ul id="messages"></ul>
+    <form action="">
+      <input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io();
+      $(function () {
+        var socket = io();
+        var speedOfUpdates = 50;
+        var inner = document.getElementById("inner");
+        document.addEventListener("mousemove", getMouse);
+
+        var inner = document.getElementById("inner");
+        var speedOfUpdates = 50;
+        document.addEventListener("mousemove", getMouse); 
+
+        var hoveringOver = false;
+
+        inner.addEventListener("mouseenter", function(){
+        hoveringOver = true;
+        });
+
+        inner.addEventListener("mouseleave", function(){
+        hoveringOver = false;
+        });
+     
+
+        inner.style.position = "absolute"; //css    
+        var innerpos = {x:0, y:0};
+
+        setInterval(checkSending, speedOfUpdates);
+        
+        var mouse = {x:50, y:50}; //mouse.x, mouse.y
+        
+        var dir = "right";
+
+        function getMouse(e){
+          mouse.x = e.pageX;
+          mouse.y = e.pageY;
+            //Checking directional change
+            if(mouse.x > innerpos.x){
+              dir = "right";
+            } else {
+              dir = "left";
+            }
+        }
+
+        function checkSending() {
+          if(hoveringOver){
+            followMouse();
+          }
+        }
+
+        function followMouse(){
+          //1. find distance X , distance Y
+         
+          var distX = mouse.x - innerpos.x - inner.getBoundingClientRect().width/2;
+          var distY = mouse.y - innerpos.y - inner.getBoundingClientRect().height/2;
+          //Easing motion
+          //Progressive reduction of distance 
+          innerpos.x += distX/5;
+          innerpos.y += distY/2;
+          
+          inner.style.left = innerpos.x + "px";
+          inner.style.top = innerpos.y + "px";
+
+          //socket.broadcast.emit('broadcast', 'hello friends!');
+          socket.emit('chat message', {left:inner.style.left, top:inner.style.top});
+          //{ left:inner.style.left, right:inner.style.top}
+        }
+
+        $('form').submit(function(){
+          socket.emit('dot', $('#m').val());
+          $('#m').val('');
+          return false;
+        });
+
+        socket.on('chat message', function(msg){
+          inner.style.left = msg.left;
+          inner.style.top = msg.top;
+          //$('#messages').append($('<li>').text(msg));
+          //window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('dot', function(msg){
+          $('#messages').append($('<li>').text(msg));
+          window.scrollTo(0, document.body.scrollHeight);
+        });
+
+      });
+    
+    </script>
+  </body>
+</html>
